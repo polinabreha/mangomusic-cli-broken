@@ -29,7 +29,7 @@ public class ReportsScreen {
             InputValidator.clearScreen();
             displayMenu();
 
-            int choice = InputValidator.getIntInRange("Select an option: ", 0, 12);
+            int choice = InputValidator.getIntInRange("Select an option: ", 0, 14);
 
             switch (choice) {
                 case 1:
@@ -68,7 +68,12 @@ public class ReportsScreen {
                 case 12:
                     showMostPlayedAlbumsByGenre();
                     break;
-
+                case 13:
+                    showUserDiversityScore();
+                    break;
+               case 14:
+                   showPeakListeningHours();
+                   break;
                 case 0:
                     running = false;
                     break;
@@ -99,6 +104,8 @@ public class ReportsScreen {
         System.out.println("10. Artist Revenue Projection");
         System.out.println("11. Churn Risk Users");
         System.out.println("12. Top 5 Albums by Genre");
+        System.out.println("13. Show diversity score");
+        System.out.println("14. Show peak listening hours");
 
         System.out.println("\n0. Back to main menu");
         System.out.println();
@@ -475,4 +482,72 @@ public class ReportsScreen {
 
         InputValidator.pressEnterToContinue();
     }
+
+    private void showUserDiversityScore() {
+
+        InputValidator.clearScreen();
+        ConsoleColors.printHeader("USER DIVERSITY SCORE");
+
+        var results = reportsDao.getUserDiversityScoreReport();
+
+        System.out.printf(
+                "%-8s %-20s %-15s %-10s %-10s %-12s %-15s%n",
+                "User ID",
+                "Username",
+                "Subscription",
+                "Genres",
+                "Artists",
+                "Total Plays",
+                "Diversity Score"
+        );
+
+        System.out.println("------------------------------------------------------------------------------------------");
+
+        for (ReportResult result : results) {
+
+            System.out.printf(
+                    "%-8d %-20s %-15s %-10d %-10d %-12d %-15.2f%n",
+                    result.getInt("user_id"),
+                    result.getString("username"),
+                    result.getString("subscription_type"),
+                    result.getInt("distinct_genres_played"),
+                    result.getInt("distinct_artists_played"),
+                    result.getInt("total_plays"),
+                    result.getDouble("diversity_score")
+            );
+        }
+
+        InputValidator.pressEnterToContinue();
+    }
+    private void showPeakListeningHours() {
+
+        InputValidator.clearScreen();
+        ConsoleColors.printHeader("PEAK LISTENING HOURS");
+
+        var results = reportsDao.getPeakListeningHoursReport();
+
+        System.out.printf(
+                "%-12s %-12s %-12s %-18s%n",
+                "Hour",
+                "Plays",
+                "Users",
+                "Avg Plays/User"
+        );
+
+        System.out.println("--------------------------------------------------------");
+
+        for (ReportResult result : results) {
+
+            System.out.printf(
+                    "%-12d %-12d %-12d %-18.2f%n",
+                    result.getInt("hour_of_day"),
+                    result.getInt("total_plays"),
+                    result.getInt("unique_users"),
+                    result.getDouble("avg_plays_per_user")
+            );
+        }
+
+        InputValidator.pressEnterToContinue();
+    }
+
 }

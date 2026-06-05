@@ -757,11 +757,118 @@ public class ReportsDao {
         return  results;
     }
 
+    public List<ReportResult> getUserDiversityScoreReport() {
+
+        List<ReportResult> results = new ArrayList<>();
+
+        String query ="SELECT\n" +
+                "\tu.user_id,\n" +
+                "    u.username,\n" +
+                "    u.subscription_type,\n" +
+                "    COUNT(DISTINCT ar.primary_genre ) AS distinct_genres_played,\n" +
+                "    COUNT(DISTINCT ar.artist_id) AS distinct_artists_played,\n" +
+                "    COUNT(*) AS total_plays,\n" +
+                "   (COUNT(DISTINCT ar.primary_genre) * 100.0 / NULLIF(COUNT(DISTINCT a.artist_id), 0)) \n" +
+                "        AS diversity_score\n" +
+                "FROM \n" +
+                "\tusers AS u \n" +
+                "JOIN\n" +
+                "\talbum_plays AS ap ON (u.user_id = ap.user_id)\n" +
+                "JOIN\n" +
+                "\talbums AS a ON (a.album_id = ap.album_id)\n" +
+                "JOIN\n" +
+                "\tartists AS ar ON (ar.artist_id = a.artist_id)\n" +
+                "GROUP BY \n" +
+                "\tu.user_id,\n" +
+                "    u.username,\n" +
+                "    u.subscription_type\n" +
+                "HAVING\n" +
+                "\t\tCOUNT(*) >= 20\n" +
+                "ORDER BY\n" +
+                "    diversity_score DESC\n" +
+                "\n" +
+                "LIMIT 100;";
 
 
+        try (
+                Connection connection = dataManager.getConnection();
+                PreparedStatement statement = connection.prepareStatement(query);
+                ResultSet rs = statement.executeQuery()
+        ) {
 
+            while (rs.next()) {
 
+                ReportResult result = new ReportResult();
 
+                result.addColumn("user_id", rs.getInt("user_id"));
+                result.addColumn("username", rs.getString("username"));
+                result.addColumn("subscription_type", rs.getString("subscription_type"));
+                result.addColumn("distinct_genres_played", rs.getInt("distinct_genres_played"));
+                result.addColumn("distinct_artists_played", rs.getInt("distinct_artists_played"));
+                result.addColumn("total_plays", rs.getInt("total_plays"));
+                result.addColumn("diversity_score", rs.getDouble("diversity_score"));
 
+                results.add(result);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error running User Diversity Score report: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return results;
+    }
+
+    public List<ReportResult> getPeakListeningHoursReport() {
+
+        List<ReportResult> results = new ArrayList<>();
+
+        String query =
+                "SELECT hours.hour_of_day, " +
+                        "       COUNT(p.play_id) AS total_plays, " +
+                        "       COUNT(DISTINCT p.user_id) AS unique_users, " +
+                        "       ROUND(COUNT(p.play_id) * 1.0 / NULLIF(COUNT(DISTINCT p.user_id), 0), 2) AS avg_plays_per_user " +
+                        "FROM ( " +
+                        "    SELECT 0 AS hour_of_day UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL " +
+                        "    SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL " +
+                        "    SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL " +
+                        "    SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL " +
+                        "    SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL " +
+                        "    SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL " +
+                        "    SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20 UNION ALL " +
+                        "    SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 " +
+                        ") hours " +
+                        "LEFT JOIN ( " +
+                        "    SELECT play_id, user_id, HOUR(played_at) AS hour_of_day " +
+                        "    FROM album_plays " +
+                        ") p ON hours.hour_of_day = p.hour_of_day " +
+                        "GROUP BY hours.hour_of_day " +
+                        "ORDER BY hours.hour_of_day";
+
+        try (
+                Connection connection = dataManager.getConnection();
+                PreparedStatement statement = connection.prepareStatement(query);
+                ResultSet rs = statement.executeQuery()
+        ) {
+
+            while (rs.next()) {
+
+                ReportResult result = new ReportResult();
+
+                result.addColumn("hour_of_day", rs.getInt("hour_of_day"));
+                result.addColumn("total_plays", rs.getInt("total_plays"));
+                result.addColumn("unique_users", rs.getInt("unique_users"));
+                result.addColumn("avg_plays_per_user", rs.getDouble("avg_plays_per_user"));
+
+                results.add(result);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error running Peak Listening Hours report: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return results;
+    }
 
 }
