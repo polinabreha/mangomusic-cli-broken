@@ -29,7 +29,7 @@ public class ReportsScreen {
             InputValidator.clearScreen();
             displayMenu();
 
-            int choice = InputValidator.getIntInRange("Select an option: ", 0, 11);
+            int choice = InputValidator.getIntInRange("Select an option: ", 0, 12);
 
             switch (choice) {
                 case 1:
@@ -65,6 +65,10 @@ public class ReportsScreen {
                 case 11:
                     showChurnRisk();
                     break;
+                case 12:
+                    showMostPlayedAlbumsByGenre();
+                    break;
+
                 case 0:
                     running = false;
                     break;
@@ -94,6 +98,7 @@ public class ReportsScreen {
         System.out.println("9. Listening by Subscription Type");
         System.out.println("10. Artist Revenue Projection");
         System.out.println("11. Churn Risk Users");
+        System.out.println("12. Top 5 Albums by Genre");
 
         System.out.println("\n0. Back to main menu");
         System.out.println();
@@ -443,5 +448,31 @@ public class ReportsScreen {
         if (text == null) return "";
         if (text.length() <= maxLength) return text;
         return text.substring(0, maxLength - 3) + "...";
+    }
+
+    private void showMostPlayedAlbumsByGenre() {
+        InputValidator.clearScreen();
+        ConsoleColors.printSection("Top 5 Albums by Genre");
+
+        List<ReportResult> results = reportsDao.getMostPlayedAlbumsByGenre();
+
+        if (results.isEmpty()) {
+            ConsoleColors.printWarning("No data available.");
+        } else {
+            System.out.printf("%-20s %-40s %-30s %12s %8s%n",
+                    "Genre", "Album", "Artist", "Plays", "Rank");
+            System.out.println("-".repeat(120));
+
+            for (ReportResult result : results) {
+                System.out.printf("%-20s %-40s %-30s %12d %8d%n",
+                        result.getString("genre"),
+                        result.getString("album_title"),
+                        result.getString("artist_name"),
+                        result.getInt("total_plays"),
+                        result.getInt("genre_rank"));
+            }
+        }
+
+        InputValidator.pressEnterToContinue();
     }
 }
